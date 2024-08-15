@@ -1,0 +1,151 @@
+---
+import { periods } from "../consts/work-date";
+import Date from "../components/Date.astro";
+---
+
+<section
+    class="my-0 flex flex-col place-items-center gap-y-10 lg:my-32"
+    aria-label="Experiencia"
+>
+    <p
+        class="text-balance text-center text-lg font-medium uppercase text-primary"
+    >
+        Mi experiencia como desarrollador de software
+    </p>
+
+    <div
+        class="flex flex-row gap-x-1 font-semibold uppercase text-primary"
+        data-date={periods}
+        role="timer"
+    >
+        <Date time="00" dateType="Años" attribute={{ "data-years": "" }} />
+
+        <span aria-hidden="true" class="mt-1 text-xl">:</span>
+
+        <Date time="00" dateType="Meses" attribute={{ "data-months": "" }} />
+
+        <span aria-hidden="true" class="mt-1 text-xl">:</span>
+
+        <Date time="00" dateType="Días" attribute={{ "data-days": "" }} />
+
+        <span aria-hidden="true" class="mt-1 text-xl">:</span>
+
+        <Date time="00" dateType="Horas" attribute={{ "data-hours": "" }} />
+
+        <span aria-hidden="true" class="mt-1 text-xl">:</span>
+
+        <Date time="00" dateType="Minutos" attribute={{ "data-minutes": "" }} />
+
+        <span aria-hidden="true" class="mt-1 text-xl">:</span>
+
+        <Date time="00" dateType="Segundos" attribute={{ "data-seconds": "" }} />
+    </div>
+</section>
+
+<script>
+    import { periods } from "../consts/work-date";
+
+    const SECOND = 1000;
+    const MINUTE = SECOND * 60;
+    const HOUR = MINUTE * 60;
+    const DAY = HOUR * 24;
+    const YEAR = DAY * 365.25; // Aproximación para incluir los años bisiestos
+    const MONTH = YEAR / 12; // Aproximación para la duración media de un mes
+
+    interface Period {
+        start: number; // Fecha de inicio en milisegundos
+        end: number; // Fecha de fin en milisegundos
+    }
+
+    function init(periods: Period[]) {
+        const $countUp = document.querySelector("[data-date]");
+        if (!$countUp) return;
+
+        let intervalId: number;
+
+        const $years = $countUp.querySelector("[data-years]");
+        const $months = $countUp.querySelector("[data-months]");
+        const $days = $countUp.querySelector("[data-days]");
+        const $hours = $countUp.querySelector("[data-hours]");
+        const $minutes = $countUp.querySelector("[data-minutes]");
+        const $seconds = $countUp.querySelector("[data-seconds]");
+
+        // Obtener la fecha actual
+        const now = Date.now();
+
+        // Calcular el tiempo total transcurrido
+        let totalTime = 0;
+        for (const period of periods) {
+            const periodStart = period.start;
+            const periodEnd = period.end;
+
+            // Solo contar el tiempo si el período está activo
+            if (periodEnd >= now && periodStart <= now) {
+                totalTime += now - periodStart;
+            } else if (periodEnd < now) {
+                totalTime += periodEnd - periodStart;
+            }
+        }
+
+        const formatTime = (time: number) => {
+            return Math.floor(time).toString().padStart(2, "0");
+        };
+
+        function updateCountUp() {
+            const now = Date.now();
+
+            // Asegúrate de que el array no esté vacío
+            if (periods.length > 0) {
+                // Accede al último período
+                const lastPeriod = periods[periods.length - 1];
+                // Actualiza el final del último período con la fecha actual
+                lastPeriod.end = now;
+            }
+
+            // Calcula el tiempo total transcurrido considerando todos los períodos
+            let totalTime = 0;
+            for (const period of periods) {
+                const periodStart = period.start;
+                const periodEnd = period.end;
+
+                if (periodEnd >= now && periodStart <= now) {
+                    totalTime += now - periodStart;
+                } else if (periodEnd < now) {
+                    totalTime += periodEnd - periodStart;
+                }
+            }
+
+            if ($years instanceof HTMLElement) {
+                $years.innerText = formatTime(totalTime / YEAR);
+            }
+
+            if ($months instanceof HTMLElement) {
+                // Calcular el número de meses y restar los años completos
+                const months = (totalTime % YEAR) / MONTH;
+                $months.innerText = formatTime(months);
+            }
+
+            if ($days instanceof HTMLElement) {
+                $days.innerText = formatTime((totalTime % MONTH) / DAY);
+            }
+
+            if ($hours instanceof HTMLElement) {
+                $hours.innerText = formatTime((totalTime % DAY) / HOUR);
+            }
+
+            if ($minutes instanceof HTMLElement) {
+                $minutes.innerText = formatTime((totalTime % HOUR) / MINUTE);
+            }
+
+            if ($seconds instanceof HTMLElement) {
+                $seconds.innerText = formatTime((totalTime % MINUTE) / SECOND);
+            }
+        }
+
+        intervalId = setInterval(updateCountUp, SECOND);
+
+        updateCountUp();
+    }
+
+    init(periods);
+</script>
